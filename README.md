@@ -23,6 +23,7 @@ It is aimed at people who:
 
 ## Current Tools
 - `PR-ospector.ps1`: cross-org PR discovery and dashboarding for created and requested-review pull requests
+- `PR-ofiler.ps1`: cross-org personal PR activity profiler for closed PRs where you created, approved, or commented
 
 ## `PR-ospector.ps1`
 The rest of this README covers how to use `PR-ospector.ps1`.
@@ -175,3 +176,40 @@ Requested-review entries include a compact `Review:` label such as:
 - `Approved with suggestions`
 - `Rejected`
 - `Declined`
+
+## `PR-ofiler.ps1`
+
+`PR-ofiler.ps1` builds a personal profile of closed Azure DevOps pull requests where the authenticated user was directly involved.
+
+It includes PRs where you:
+- created the PR
+- personally approved the PR, including approval with suggestions
+- personally left non-system comments
+
+It intentionally does not include PRs where only one of your reviewer groups was requested and you did not personally vote or comment.
+
+By default, it reads the same `config.yml` format as `PR-ospector.ps1`, scans the configured projects, and looks back 90 days across both completed and abandoned PRs.
+Output is grouped into `CREATED` for PRs you authored and `INVOLVED` for the remaining PRs where you personally approved or commented.
+
+```powershell
+.\PR-ofiler.ps1
+```
+
+Common options:
+- `-Days 30` to look back a relative number of days
+- `-Since 2026-01-01` to choose an exact starting date
+- `-Status completed` to include only completed PRs
+- `-Status abandoned` to include only abandoned PRs
+- `-View Created` to include only PRs you created
+- `-View Approved` to include only PRs you personally approved
+- `-View Commented` to include only PRs where you personally commented
+- `-View Created,Approved` to combine specific involvement types
+- `-MaxPerProject 1000` to raise the closed-PR scan limit per project and status
+
+Direct usage without config is also supported:
+
+```powershell
+.\PR-ofiler.ps1 -Org org1 -Pat "$env:PAT_AZDO" -Projects ProjectA,ProjectB
+```
+
+If `-Projects` is omitted in direct mode, the script scans all visible projects in the organization. In config mode, organizations with no configured projects are skipped, matching the normal day-to-day performance posture of `PR-ospector.ps1`.
