@@ -31,11 +31,25 @@ param(
     [object[]]$Groups = @()
 )
 
+function ConvertTo-AzDOLocalDateTime {
+    param([AllowNull()][object]$Value)
+
+    if ($null -eq $Value) { return $null }
+
+    $date=[datetime]$Value
+
+    if ($date.Kind -eq [DateTimeKind]::Local) { return $date }
+    if ($date.Kind -eq [DateTimeKind]::Utc) { return $date.ToLocalTime() }
+
+    [DateTime]::SpecifyKind($date, [DateTimeKind]::Utc).ToLocalTime()
+}
+
 function Format-RelativeTime {
     param([datetime]$DateTime)
 
     if (-not $DateTime) { return 'unknown' }
 
+    $DateTime=ConvertTo-AzDOLocalDateTime $DateTime
     $now=Get-Date
     $span=$now-$DateTime
 
@@ -629,7 +643,7 @@ function New-AzDORecord {
         PullRequestId=$PullRequest.pullRequestId;
         Title=$PullRequest.title;
         CreatedBy=$PullRequest.createdBy.displayName;
-        CreationDate=if ($PullRequest.creationDate) {[datetime]$PullRequest.creationDate} else {$null};
+        CreationDate=ConvertTo-AzDOLocalDateTime $PullRequest.creationDate;
         PRUrl=$url;
         View=$View;
         ReviewStatus=$null;
