@@ -152,13 +152,14 @@ Watch mode requires an interactive console because it reads key presses and upda
 To run Discover mode headless on a schedule, use the following to configure a scheduled task (update $repoPath as needed):
 
 ```powershell
-$repoPath    = 'C:\source\github\<your-GitHub-username>\PR-actical-Tools'
+$repoPath    = '<path_to_repo>\PR-actical-Tools'
 $conhost     = "$env:SystemRoot\System32\conhost.exe"
 $pwsh        = 'C:\Program Files\PowerShell\7\pwsh.exe'
 $script      = Join-Path $repoPath 'PR-ospector.ps1'
 $config      = Join-Path $repoPath 'config.yml'
 $startAt     = (Get-Date).Date.AddDays(1).AddHours(7) # start tomorrow at 7:00 AM
 $repeatEvery = New-TimeSpan -Hours 2
+$repeatFor   = New-TimeSpan -Hours 12
 
 $action = New-ScheduledTaskAction `
     -Execute $conhost `
@@ -168,7 +169,8 @@ $action = New-ScheduledTaskAction `
 $trigger = New-ScheduledTaskTrigger `
     -Once `
     -At $startAt `
-    -RepetitionInterval $repeatEvery
+    -RepetitionInterval $repeatEvery `
+    -RepetitionDuration $repeatFor
 
 Set-ScheduledTask `
     -TaskName 'pr-ospector refresh' `
@@ -176,9 +178,9 @@ Set-ScheduledTask `
     -Trigger $trigger
 ```
 
-This updates the existing `pr-ospector refresh` task to start tomorrow at 7:00 AM and repeat every two hours. 
+This updates the existing `pr-ospector refresh` task to start tomorrow at 7:00 AM and repeat every two hours for 12 hours.
 
-Adjust `$startAt` or `$repeatEvery` as needed. PAT environment variables must be persistent and available to the task's account; session-only values are not inherited.
+Adjust the schedule variables as needed. PAT environment variables must be persistent and available to the task's account; session-only values are not inherited.
 
 Normal output is grouped above the org level like this:
 
