@@ -23,6 +23,7 @@ It is aimed at people who:
 
 ## Current Tools
 - `PR-ospector.ps1`: cross-org PR discovery and dashboarding for created and requested-review pull requests
+- `PR-ofiler.ps1`: cross-org personal PR activity profiler for closed PRs where you created, approved, or commented
 
 ## `PR-ospector.ps1`
 The rest of this README covers how to use `PR-ospector.ps1`.
@@ -146,6 +147,38 @@ To see every open requested-review PR instead of only actionable ones:
 When `-Org` is provided, the script uses direct parameters instead of `config.yml`.
 
 Watch mode requires an interactive console because it reads key presses and updates the countdown in place. Press the configured refresh key, `r` by default, to refresh immediately. Press `q` to quit. `-Watch -Mode Discover` is blocked because Discover mode can update YAML config.
+
+## Scheduled Discover Task
+To run Discover mode headless on a schedule, use the following to configure a scheduled task (update $repoPath as needed):
+
+```powershell
+$repoPath    = 'C:\source\github\<your-GitHub-username>\PR-actical-Tools'
+$conhost     = "$env:SystemRoot\System32\conhost.exe"
+$pwsh        = 'C:\Program Files\PowerShell\7\pwsh.exe'
+$script      = Join-Path $repoPath 'PR-ospector.ps1'
+$config      = Join-Path $repoPath 'config.yml'
+$startAt     = (Get-Date).Date.AddDays(1).AddHours(7) # start tomorrow at 7:00 AM
+$repeatEvery = New-TimeSpan -Hours 2
+
+$action = New-ScheduledTaskAction `
+    -Execute $conhost `
+    -Argument "--headless `"$pwsh`" -NoProfile -NonInteractive -File `"$script`" -ConfigPath `"$config`" -Mode Discover" `
+    -WorkingDirectory $repoPath
+
+$trigger = New-ScheduledTaskTrigger `
+    -Once `
+    -At $startAt `
+    -RepetitionInterval $repeatEvery
+
+Set-ScheduledTask `
+    -TaskName 'pr-ospector refresh' `
+    -Action $action `
+    -Trigger $trigger
+```
+
+This updates the existing `pr-ospector refresh` task to start tomorrow at 7:00 AM and repeat every two hours. 
+
+Adjust `$startAt` or `$repeatEvery` as needed. PAT environment variables must be persistent and available to the task's account; session-only values are not inherited.
 
 Normal output is grouped above the org level like this:
 
